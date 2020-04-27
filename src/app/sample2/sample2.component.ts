@@ -150,9 +150,9 @@ export class Sample2Component implements OnInit {
     for(let i=0;i<28;i++){
       for(let j=0;j<28;j++){
         if(i==j){
-          indata.fill(1,i*28+j,1);
+          indata[i*28+j] = 1;
         }else{
-          indata.fill(0,i*28+j,1);
+          indata[i*28+j] = 0;
         }
       }
     }
@@ -178,9 +178,9 @@ export class Sample2Component implements OnInit {
   drawOneWord(context:CanvasRenderingContext2D,input:Uint32Array){
     input.forEach((value: number, index: number, array: Uint32Array) =>{
       if(value !=0 ){
-        const y = index / 28 * 10;
-        const x = index % 28 * 10;
-        context.fillRect(x,y,10,10);
+        const y = index / 28 * 1;
+        const x = index % 28 * 1;
+        context.fillRect(x,y,1,1);
       }
     });
   }
