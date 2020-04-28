@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import * as tf from '@tensorflow/tfjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 
 export const IMAGE_H = 28;
 export const IMAGE_W = 28;
@@ -146,7 +146,7 @@ export class Sample2Component implements OnInit {
 
 
     
-    let indata = new Uint32Array(28*28);
+    let indata = new ArrayBuffer(28*28);
     for(let i=0;i<28;i++){
       for(let j=0;j<28;j++){
         if(i==j){
@@ -157,32 +157,45 @@ export class Sample2Component implements OnInit {
       }
     }
     
-
-    this.drawOneWord(showNmContext,indata);
-
-    showNmDiv.appendChild(showNmCanvas);
+    
 
     //showNmCanvas.getContext('2d');
-    
+
     //let t10kL = this.http.get<ArrayBuffer>('/assets/t10k-labels.idx1-ubyte');
-    let t10kL = this.http.get<ArrayBuffer>('/assets/t10k-images.idx3-ubyte');
-    // t10kL.pipe//forEach(value =>{
-    //   console.log(value);
-    // });
+    let t10kL = this.http.get('/assets/t10k-images.idx3-ubyte',{responseType: 'arraybuffer'});
+    
+    let index = 0;
+    // t10kL.forEach((value) =>{
+    //    //console.log(value);
+    //    indata[index]=value[index++];
+    //  });
     //console.log();
-    // t10kL.toPromise().then( data => {
-    //   console.log(data.byteLength);
-    // });
+    t10kL.toPromise().then( data => {
+       //console.log(data);
+       this.drawOneWord(showNmContext,data);
+
+       showNmDiv.appendChild(showNmCanvas);
+    });
+
+    
+
   }
 
-  drawOneWord(context:CanvasRenderingContext2D,input:Uint32Array){
-    input.forEach((value: number, index: number, array: Uint32Array) =>{
-      if(value !=0 ){
-        const y = index / 28 * 1;
-        const x = index % 28 * 1;
+  drawOneWord(context:CanvasRenderingContext2D,input:ArrayBuffer){
+    for(let i = 0; i < input.byteLength;i++){
+            if(input[i] !=0 ){
+        const y = i / 28 * 1;
+        const x = i % 28 * 1;
         context.fillRect(x,y,1,1);
       }
-    });
+    }
+    // input.forEach((value: number, index: number, array: ArrayBuffer) =>{
+    //   if(value !=0 ){
+    //     const y = index / 28 * 1;
+    //     const x = index % 28 * 1;
+    //     context.fillRect(x,y,1,1);
+    //   }
+    // });
   }
 
   // nn_model() {
