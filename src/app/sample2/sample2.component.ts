@@ -133,6 +133,8 @@ export class Sample2Component implements OnInit {
 
   private model: tf.Sequential;
 
+  message:string;
+
   constructor(private http: HttpClient) { }
 
   ngOnInit() {
@@ -144,34 +146,53 @@ export class Sample2Component implements OnInit {
     //showNmContext.drawImage(image, 0, 0, image.width, image.height);
     //showNmContext.fillRect(0,0,100,100);
 
+    
 
     
-    let indata = new ArrayBuffer(28*28);
-    for(let i=0;i<28;i++){
-      for(let j=0;j<28;j++){
-        if(i==j){
-          indata[i*28+j] = 1;
-        }else{
-          indata[i*28+j] = 0;
-        }
-      }
-    }
+    // let indata = new ArrayBuffer(28*28);
+    // for(let i=0;i<28;i++){
+    //   for(let j=0;j<28;j++){
+    //     if(i==j){
+    //       indata[i*28+j] = 1;
+    //     }else{
+    //       indata[i*28+j] = 0;
+    //     }
+    //   }
+    // }
     
     
 
     //showNmCanvas.getContext('2d');
 
     //let t10kL = this.http.get<ArrayBuffer>('/assets/t10k-labels.idx1-ubyte');
-    let t10kL = this.http.get('/assets/t10k-images.idx3-ubyte',{responseType: 'arraybuffer'});
+    this.message="Loading data";
+
+
+    let t10kL = this.http.get('/assets/t10k-labels.idx1-ubyte',{responseType: 'arraybuffer'});
+    
+    
+
+    t10kL.toPromise().then( data => {
+
+      this.message="Loading complate 1";
+
+      const t10kLabel = new Uint8Array(data);
+      t10kLabel.forEach((value: number, index: number, array: Uint8Array)=>{
+        this.message= this.message + " " + value;
+      });
+    });
+
+
+
+    let t10kI = this.http.get('/assets/t10k-images.idx3-ubyte',{responseType: 'arraybuffer'});
     
     let index = 0;
-    // t10kL.forEach((value) =>{
-    //    //console.log(value);
-    //    indata[index]=value[index++];
-    //  });
-    //console.log();
-    t10kL.toPromise().then( data => {
-       //console.log(data);
+
+    t10kI.toPromise().then( data => {
+
+      this.message="Loading complate 2";
+
+      showNmCanvas.height = data.byteLength/280;
        this.drawOneWord(showNmContext,data);
 
        showNmDiv.appendChild(showNmCanvas);
@@ -182,20 +203,16 @@ export class Sample2Component implements OnInit {
   }
 
   drawOneWord(context:CanvasRenderingContext2D,input:ArrayBuffer){
-    for(let i = 0; i < input.byteLength;i++){
-            if(input[i] !=0 ){
-        const y = i / 28 * 1;
-        const x = i % 28 * 1;
-        context.fillRect(x,y,1,1);
+
+    const t10kImage = new Uint8Array(input);
+
+    t10kImage.forEach((value: number, index: number, array: ArrayBuffer) =>{
+      if(value !=0 && index > 15){
+        const y = (index-15) / 28 * 4;
+        const x = (index-15) % 28 * 4;
+        context.fillRect(x,y,4,4);
       }
-    }
-    // input.forEach((value: number, index: number, array: ArrayBuffer) =>{
-    //   if(value !=0 ){
-    //     const y = index / 28 * 1;
-    //     const x = index % 28 * 1;
-    //     context.fillRect(x,y,1,1);
-    //   }
-    // });
+    });
   }
 
   // nn_model() {
