@@ -9,11 +9,10 @@ const NUM_CLASSES = 10;
 const NUM_DATASET_ELEMENTS = 65000;
 const NUM_TRAIN_ELEMENTS = 55000;
 const NUM_TEST_ELEMENTS = NUM_DATASET_ELEMENTS - NUM_TRAIN_ELEMENTS;
-const MNIST_IMAGES_SPRITE_PATH =
-    '../assets/mnist_images.png';
-const MNIST_LABELS_PATH =
-    '../assets/mnist_labels_uint8';
-
+const TRAIN_IMAGES_PATH =
+    '/assets/train-images.idx3-ubyte';
+const TRAIN_LABELS_PATH =
+    '/assets/train-labels.idx1-ubyte';
 
 @Component({
   selector: 'app-sample2',
@@ -75,8 +74,6 @@ const MNIST_LABELS_PATH =
 //     const [imgResponse, labelsResponse] =
 //         await Promise.all([imgRequest, labelsRequest]);
 
-//     this.datasetLabels = new Uint8Array(await labelsResponse.arrayBuffer());
-
 //     // Slice the the images and labels into train and test sets.
 //     this.trainImages =
 //         this.datasetImages.slice(0, IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
@@ -132,6 +129,8 @@ const MNIST_LABELS_PATH =
 export class Sample2Component implements OnInit {
 
   private model: tf.Sequential;
+  private trainLabelData: Uint8Array;
+  private trainImageData: Uint8Array;
 
   message:string;
 
@@ -143,38 +142,25 @@ export class Sample2Component implements OnInit {
 
     const showNmCanvas = document.createElement('canvas');
     const showNmContext = showNmCanvas.getContext( '2d' );
-    //showNmContext.drawImage(image, 0, 0, image.width, image.height);
-    //showNmContext.fillRect(0,0,100,100);
 
-    
+    this.message = 'Loading train images data.';
 
-    
-    // let indata = new ArrayBuffer(28*28);
-    // for(let i=0;i<28;i++){
-    //   for(let j=0;j<28;j++){
-    //     if(i==j){
-    //       indata[i*28+j] = 1;
-    //     }else{
-    //       indata[i*28+j] = 0;
-    //     }
-    //   }
-    // }
-    
-    
+    const trainImages = this.http.get(TRAIN_IMAGES_PATH,{responseType: 'arraybuffer'});
+    trainImages.toPromise().then( data => {
+      this.trainImageData = new Uint8Array(data);
+      this.message = 'Train images data loaded';
+    });
 
-    //showNmCanvas.getContext('2d');
+    const trainLabel = this.http.get(TRAIN_LABELS_PATH,{responseType: 'arraybuffer'});
+    trainLabel.toPromise().then( data => {
+      this.trainLabelData = new Uint8Array(data);
+      this.message = 'Train label data loaded';
+    });
 
-    //let t10kL = this.http.get<ArrayBuffer>('/assets/t10k-labels.idx1-ubyte');
-    this.message="Loading data";
-
-
-    let t10kL = this.http.get('/assets/t10k-labels.idx1-ubyte',{responseType: 'arraybuffer'});
-    
-    
-
+    const t10kL = this.http.get('/assets/t10k-labels.idx1-ubyte',{responseType: 'arraybuffer'});
     t10kL.toPromise().then( data => {
 
-      this.message="Loading complate 1";
+      this.message = 'Loading complate 1';
 
       const t10kLabel = new Uint8Array(data);
       t10kLabel.forEach((value: number, index: number, array: Uint8Array)=>{
