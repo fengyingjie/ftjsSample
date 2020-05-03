@@ -13,6 +13,10 @@ const TRAIN_IMAGES_PATH =
     '/assets/train-images.idx3-ubyte';
 const TRAIN_LABELS_PATH =
     '/assets/train-labels.idx1-ubyte';
+const TEST_IMAGES_PATH =
+    '/assets/t10k-images.idx3-ubyte';
+const TEST_LABELS_PATH =
+    '/assets/t10k-labels.idx1-ubyte';
 
 @Component({
   selector: 'app-sample2',
@@ -20,112 +24,6 @@ const TRAIN_LABELS_PATH =
   styleUrls: ['./sample2.component.less']
 })
 
-
-
-// class miniData{
-//   constructor() {}
-
-//   nextTrainBatch(){
-
-//   }
-
-//   async load() {
-//     // Make a request for the MNIST sprited image.
-//     const img = new Image();
-//     const canvas = document.createElement('canvas');
-//     const ctx = canvas.getContext('2d');
-//     const imgRequest = new Promise((resolve, reject) => {
-//       img.crossOrigin = '';
-//       img.onload = () => {
-//         img.width = img.naturalWidth;
-//         img.height = img.naturalHeight;
-
-//         const datasetBytesBuffer =
-//             new ArrayBuffer(NUM_DATASET_ELEMENTS * IMAGE_SIZE * 4);
-
-//         const chunkSize = 5000;
-//         canvas.width = img.width;
-//         canvas.height = chunkSize;
-
-//         for (let i = 0; i < NUM_DATASET_ELEMENTS / chunkSize; i++) {
-//           const datasetBytesView = new Float32Array(
-//               datasetBytesBuffer, i * IMAGE_SIZE * chunkSize * 4,
-//               IMAGE_SIZE * chunkSize);
-//           ctx.drawImage(
-//               img, 0, i * chunkSize, img.width, chunkSize, 0, 0, img.width,
-//               chunkSize);
-
-//           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-//           for (let j = 0; j < imageData.data.length / 4; j++) {
-//             // All channels hold an equal value since the image is grayscale, so
-//             // just read the red channel.
-//             datasetBytesView[j] = imageData.data[j * 4] / 255;
-//           }
-//         }
-//         this.datasetImages = new Float32Array(datasetBytesBuffer);
-
-//         resolve();
-//       };
-//       img.src = MNIST_IMAGES_SPRITE_PATH;
-//     });
-
-//     const labelsRequest = fetch(MNIST_LABELS_PATH);
-//     const [imgResponse, labelsResponse] =
-//         await Promise.all([imgRequest, labelsRequest]);
-
-//     // Slice the the images and labels into train and test sets.
-//     this.trainImages =
-//         this.datasetImages.slice(0, IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
-//     this.testImages = this.datasetImages.slice(IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
-//     this.trainLabels =
-//         this.datasetLabels.slice(0, NUM_CLASSES * NUM_TRAIN_ELEMENTS);
-//     this.testLabels =
-//         this.datasetLabels.slice(NUM_CLASSES * NUM_TRAIN_ELEMENTS);
-//   }
-
-//   /**
-//    * Get all training data as a data tensor and a labels tensor.
-//    *
-//    * @returns
-//    *   xs: The data tensor, of shape `[numTrainExamples, 28, 28, 1]`.
-//    *   labels: The one-hot encoded labels tensor, of shape
-//    *     `[numTrainExamples, 10]`.
-//    */
-//   getTrainData() {
-//     const xs = tf.tensor4d(
-//         this.trainImages,
-//         [this.trainImages.length / IMAGE_SIZE, IMAGE_H, IMAGE_W, 1]);
-//     const labels = tf.tensor2d(
-//         this.trainLabels, [this.trainLabels.length / NUM_CLASSES, NUM_CLASSES]);
-//     return {xs, labels};
-//   }
-
-//   /**
-//    * Get all test data as a data tensor a a labels tensor.
-//    *
-//    * @param {number} numExamples Optional number of examples to get. If not
-//    *     provided,
-//    *   all test examples will be returned.
-//    * @returns
-//    *   xs: The data tensor, of shape `[numTestExamples, 28, 28, 1]`.
-//    *   labels: The one-hot encoded labels tensor, of shape
-//    *     `[numTestExamples, 10]`.
-//    */
-//   getTestData(numExamples) {
-//     let xs = tf.tensor4d(
-//         this.testImages,
-//         [this.testImages.length / IMAGE_SIZE, IMAGE_H, IMAGE_W, 1]);
-//     let labels = tf.tensor2d(
-//         this.testLabels, [this.testLabels.length / NUM_CLASSES, NUM_CLASSES]);
-
-//     if (numExamples != null) {
-//       xs = xs.slice([0, 0, 0, 0], [numExamples, IMAGE_H, IMAGE_W, 1]);
-//       labels = labels.slice([0, 0], [numExamples, NUM_CLASSES]);
-//     }
-//     return {xs, labels};
-//   }
-// }
 export class Sample2Component implements OnInit {
 
   private model: tf.Sequential;
@@ -136,7 +34,7 @@ export class Sample2Component implements OnInit {
 
   constructor(private http: HttpClient) { }
 
-  ngOnInit() {
+  async ngOnInit() {
 
     const showNmDiv = document.getElementById('myCanvas');
 
@@ -168,8 +66,6 @@ export class Sample2Component implements OnInit {
       });
     });
 
-
-
     let t10kI = this.http.get('/assets/t10k-images.idx3-ubyte',{responseType: 'arraybuffer'});
     
     let index = 0;
@@ -184,8 +80,10 @@ export class Sample2Component implements OnInit {
        showNmDiv.appendChild(showNmCanvas);
     });
 
-    
-
+    const trainData = new miniData(this.http);
+    await trainData.load();
+    trainData.getTrainData();
+    trainData.getTestData(1);
   }
 
   drawOneWord(context:CanvasRenderingContext2D,input:ArrayBuffer){
@@ -259,4 +157,151 @@ export class Sample2Component implements OnInit {
   //     await tf.nextFrame();
   //   }
   // }
+}
+
+class miniData{
+
+  private trainImageData: Uint8Array;
+  private trainLabelData: Uint8Array;
+  private testImageData: Uint8Array;
+  private testLabelData: Uint8Array;
+
+  constructor(private http: HttpClient) {}
+
+  nextTrainBatch(){
+
+  }
+
+  async load() {
+    const trainImages = this.http.get(TRAIN_IMAGES_PATH, { responseType: 'arraybuffer' });
+    await trainImages.toPromise().then( data => {
+       this.trainImageData = new Uint8Array(data);
+        this.trainImageData =
+        this.trainImageData.slice(16, IMAGE_SIZE * NUM_TRAIN_ELEMENTS + 16);
+    });
+
+    const trainLabel = this.http.get(TRAIN_LABELS_PATH,{responseType: 'arraybuffer'});
+    await trainLabel.toPromise().then( data => {
+      this.trainLabelData = new Uint8Array(data);
+      this.trainLabelData = 
+      this.trainLabelData.slice(8, NUM_TRAIN_ELEMENTS + 8);
+    });
+
+    const testImages = this.http.get(TEST_IMAGES_PATH, { responseType: 'arraybuffer' });
+    await testImages.toPromise().then( data => {
+        this.testImageData = new Uint8Array(data);
+        this.testImageData =
+        this.testImageData.slice(16, IMAGE_SIZE * NUM_TEST_ELEMENTS + 16);
+    });
+
+    const testLabel = this.http.get(TEST_LABELS_PATH,{responseType: 'arraybuffer'});
+    await testLabel.toPromise().then( data => {
+      this.testLabelData = new Uint8Array(data);
+      this.testLabelData = 
+      this.testLabelData.slice(8, NUM_TEST_ELEMENTS + 8);
+    });
+
+    // Slice the the images and labels into train and test sets.
+    //this.trainImageData =
+    //    this.trainImageData.slice(15, IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
+   // this.trainLabelData = 
+     //   this.trainLabelData.slice(7, NUM_TRAIN_ELEMENTS);
+
+
+    // const img = new Image();
+    // const canvas = document.createElement('canvas');
+    // const ctx = canvas.getContext('2d');
+    // const imgRequest = new Promise((resolve, reject) => {
+    //   img.crossOrigin = '';
+    //   img.onload = () => {
+    //     img.width = img.naturalWidth;
+    //     img.height = img.naturalHeight;
+
+    //     const datasetBytesBuffer =
+    //         new ArrayBuffer(NUM_DATASET_ELEMENTS * IMAGE_SIZE * 4);
+
+    //     const chunkSize = 5000;
+    //     canvas.width = img.width;
+    //     canvas.height = chunkSize;
+
+    //     for (let i = 0; i < NUM_DATASET_ELEMENTS / chunkSize; i++) {
+    //       const datasetBytesView = new Float32Array(
+    //           datasetBytesBuffer, i * IMAGE_SIZE * chunkSize * 4,
+    //           IMAGE_SIZE * chunkSize);
+    //       ctx.drawImage(
+    //           img, 0, i * chunkSize, img.width, chunkSize, 0, 0, img.width,
+    //           chunkSize);
+
+    //        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    //       for (let j = 0; j < imageData.data.length / 4; j++) {
+    //         // All channels hold an equal value since the image is grayscale, so
+    //         // just read the red channel.
+    //         datasetBytesView[j] = imageData.data[j * 4] / 255;
+    //       }
+    //     }
+    //     this.datasetImages = new Float32Array(datasetBytesBuffer);
+
+    //     resolve();
+    //   };
+    //   img.src = MNIST_IMAGES_SPRITE_PATH;
+    // });
+
+    // const labelsRequest = fetch(MNIST_LABELS_PATH);
+    // const [imgResponse, labelsResponse] =
+    //     await Promise.all([imgRequest, labelsRequest]);
+
+    // // Slice the the images and labels into train and test sets.
+    // this.trainImages =
+    //     this.datasetImages.slice(0, IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
+    // this.testImages = this.datasetImages.slice(IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
+    // this.trainLabels =
+    //     this.datasetLabels.slice(0, NUM_CLASSES * NUM_TRAIN_ELEMENTS);
+    // this.testLabels =
+    //     this.datasetLabels.slice(NUM_CLASSES * NUM_TRAIN_ELEMENTS);
+  }
+  /**
+   * Get all training data as a data tensor and a labels tensor.
+   *
+   * @returns
+   *   xs: The data tensor, of shape `[numTrainExamples, 28, 28, 1]`.
+   *   labels: The one-hot encoded labels tensor, of shape
+   *     `[numTrainExamples, 10]`.
+   */
+  getTrainData() {
+    const xs = tf.tensor4d(
+        this.trainImageData,
+        [this.trainImageData.length / IMAGE_SIZE, IMAGE_H, IMAGE_W, 1]);
+    const labels = tf.tensor2d(
+        this.trainLabelData,
+        [this.trainLabelData.length , 1]);//NUM_CLASSES]);
+    return {xs, labels};
+  }
+
+  /**
+   * Get all test data as a data tensor a a labels tensor.
+   *
+   * @param {number} numExamples Optional number of examples to get. If not
+   *     provided,
+   *   all test examples will be returned.
+   * @returns
+   *   xs: The data tensor, of shape `[numTestExamples, 28, 28, 1]`.
+   *   labels: The one-hot encoded labels tensor, of shape
+   *     `[numTestExamples, 10]`.
+   */
+  getTestData(numExamples) {
+    let xs = tf.tensor4d(
+        this.testImageData,
+        [this.testImageData.length / IMAGE_SIZE, IMAGE_H, IMAGE_W, 1]);
+    let labels = tf.tensor2d(
+        this.testLabelData, [this.testLabelData.length, 1]); /// NUM_CLASSES, NUM_CLASSES]);
+
+    if (numExamples != null) {
+      xs = xs.slice([0, 0, 0, 0], [numExamples, IMAGE_H, IMAGE_W, 1]);
+      labels = labels.slice([0, 0], [numExamples, 1]); //NUM_CLASSES]);
+    }
+    xs.print();
+    labels.print();
+    return {xs, labels};
+  }
 }
