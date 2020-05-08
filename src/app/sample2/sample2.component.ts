@@ -104,6 +104,7 @@ export class Sample2Component implements OnInit {
   }
 
   nn_model() {
+    
     this.model = tf.sequential();
     this.model.add(tf.layers.dense({
       units: 32, inputShape: [784]
@@ -127,34 +128,67 @@ export class Sample2Component implements OnInit {
   }
 
   async train() {
-    //const BATCH_SIZE = 16;
+    const BATCH_SIZE = 16;
     const TRAIN_BATCHES = 100;
   
     //const TEST_BATCH_SIZE = 100;
     //const TEST_ITERATION_FREQUENCY = 5;
   
     const data = new miniData(this.http);
-
+    this.message = "load start";
     await data.load();
-
-    const batch = data.getTrainData(1000);
+    this.message = "load END";
+    const batch = data.getTrainData(10000);
     
     // The entire dataset doesn't fit into memory so we call fit repeatedly
     // with batches.
-    const history = await this.model.fit(
-        batch.xs.reshape([1000, 784]), batch.labels,
-        {batchSize: 16, validationSplit:0.15, epochs: 5});
+    // const history = await this.model.fit(
+    //     batch.xs.reshape([10000, 784]), batch.labels,
+    //     {batchSize: 16, validationSplit:0.15, epochs: 5});
 
+    let valAcc;
+    await this.model.fit(batch.xs.reshape([10000, 784]), batch.labels, {
+      batchSize:32,
+      validationSplit:0.15,
+      epochs: 1,
+      callbacks: {
+        onBatchEnd: async (batch, logs) => {
+          this.message = logs.acc + "," + logs.loss;
+          // trainBatchCount++;
+          // ui.logStatus(
+          //     `Training... (` +
+          //     `${(trainBatchCount / totalNumBatches * 100).toFixed(1)}%` +
+          //     ` complete). To stop training, refresh or close page.`);
+          // ui.plotLoss(trainBatchCount, logs.loss, 'train');
+          // ui.plotAccuracy(trainBatchCount, logs.acc, 'train');
+          // if (onIteration && batch % 10 === 0) {
+          //   onIteration('onBatchEnd', batch, logs);
+          // }
+          await tf.nextFrame();
+        },
+        onEpochEnd: async (epoch, logs) => {
+          valAcc = logs.val_acc;
+          // ui.plotLoss(trainBatchCount, logs.val_loss, 'validation');
+          // ui.plotAccuracy(trainBatchCount, logs.val_acc, 'validation');
+          // if (onIteration) {
+          //   onIteration('onEpochEnd', epoch, logs);
+          // }
+          await tf.nextFrame();
+        }
+      }
+    });
+
+    
     batch.xs.dispose();
     batch.labels.dispose();
 
     const test =  data.getTestData(100);
-    //const evalOutput = this.model.evaluate(test.xs, test.labels);
+    const evalOutput = this.model.evaluate(test.xs.reshape([100, 784]), test.labels);
 
-    // this.message = 
-    //   `\nEvaluation result:\n` +
-    //   `  Loss = ${evalOutput[0].dataSync()[0].toFixed(3)}; `+
-    //   `Accuracy = ${evalOutput[1].dataSync()[0].toFixed(3)}`;
+    this.message = 
+      'Evaluation result:' +
+      'Loss = ' + evalOutput[0].dataSync()[0].toFixed(3) +
+      'Accuracy = ' + evalOutput[1].dataSync()[0].toFixed(3);
   }
 }
 
