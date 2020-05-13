@@ -90,25 +90,27 @@ export class Sample2Component implements OnInit {
   
   }
 
-  drawOneWord(context:CanvasRenderingContext2D,input:ArrayBuffer){
+  // drawOneWord(context:CanvasRenderingContext2D,input:ArrayBuffer){
 
-    const t10kImage = new Uint8Array(input);
+  //   const t10kImage = new Uint8Array(input);
 
-    t10kImage.forEach((value: number, index: number, array: ArrayBuffer) =>{
-      if(value !=0 && index > 15){
-        const y = (index-15) / 28 * 4;
-        const x = (index-15) % 28 * 4;
-        context.fillRect(x,y,4,4);
-      }
-    });
-  }
+  //   t10kImage.forEach((value: number, index: number, array: ArrayBuffer) =>{
+  //     if(value !=0 && index > 15){
+  //       const y = (index-15) / 28 * 4;
+  //       const x = (index-15) % 28 * 4;
+  //       context.fillRect(x,y,4,4);
+  //     }
+  //   });
+  // }
 
   nn_model() {
     
     this.model = tf.sequential();
+
     this.model.add(tf.layers.dense({
       units: 32, inputShape: [784]
     }));
+
     this.model.add(tf.layers.dense({
       units: 256
     }));
@@ -129,7 +131,7 @@ export class Sample2Component implements OnInit {
 
   async train() {
     const BATCH_SIZE = 16;
-    const TRAIN_BATCHES = 100;
+    const TRAIN_BATCHES = 10;
   
     //const TEST_BATCH_SIZE = 100;
     //const TEST_ITERATION_FREQUENCY = 5;
@@ -138,57 +140,66 @@ export class Sample2Component implements OnInit {
     this.message = "load start";
     await data.load();
     this.message = "load END";
-    const batch = data.getTrainData(10000);
+    const batch = data.getTrainData();
     
+    this.message = "load END2";
     // The entire dataset doesn't fit into memory so we call fit repeatedly
     // with batches.
-    // const history = await this.model.fit(
-    //     batch.xs.reshape([10000, 784]), batch.labels,
-    //     {batchSize: 16, validationSplit:0.15, epochs: 5});
-
-    let valAcc;
-    await this.model.fit(batch.xs.reshape([10000, 784]), batch.labels, {
-      batchSize:32,
-      validationSplit:0.15,
-      epochs: 1,
-      callbacks: {
-        onBatchEnd: async (batch, logs) => {
-          this.message = logs.acc + "," + logs.loss;
-          // trainBatchCount++;
-          // ui.logStatus(
-          //     `Training... (` +
-          //     `${(trainBatchCount / totalNumBatches * 100).toFixed(1)}%` +
-          //     ` complete). To stop training, refresh or close page.`);
-          // ui.plotLoss(trainBatchCount, logs.loss, 'train');
-          // ui.plotAccuracy(trainBatchCount, logs.acc, 'train');
-          // if (onIteration && batch % 10 === 0) {
-          //   onIteration('onBatchEnd', batch, logs);
-          // }
-          await tf.nextFrame();
-        },
-        onEpochEnd: async (epoch, logs) => {
-          valAcc = logs.val_acc;
-          // ui.plotLoss(trainBatchCount, logs.val_loss, 'validation');
-          // ui.plotAccuracy(trainBatchCount, logs.val_acc, 'validation');
-          // if (onIteration) {
-          //   onIteration('onEpochEnd', epoch, logs);
-          // }
-          await tf.nextFrame();
+    const history = await this.model.fit(
+        batch.xs.reshape([NUM_TRAIN_ELEMENTS, 784]), batch.labels,
+        {batchSize: 16, validationSplit:0.15, epochs: 5,
+          callbacks: {
+             onBatchEnd: async (batch1, logs) => {
+              this.message = logs.acc + ',' + logs.loss;
+             }
+          }
         }
-      }
-    });
+        );
+
+    this.message = "load END3";
+    // let valAcc;
+    // await this.model.fit(batch.xs.reshape([NUM_TRAIN_ELEMENTS, 784]), batch.labels, {
+    //   batchSize:32,
+    //   validationSplit:0.15,
+    //   epochs: 1,
+    //   callbacks: {
+    //     onBatchEnd: async (batch, logs) => {
+    //       //this.message = logs.acc + "," + logs.loss;
+    //       // trainBatchCount++;
+    //       // ui.logStatus(
+    //       //     `Training... (` +
+    //       //     `${(trainBatchCount / totalNumBatches * 100).toFixed(1)}%` +
+    //       //     ` complete). To stop training, refresh or close page.`);
+    //       // ui.plotLoss(trainBatchCount, logs.loss, 'train');
+    //       // ui.plotAccuracy(trainBatchCount, logs.acc, 'train');
+    //       // if (onIteration && batch % 10 === 0) {
+    //       //   onIteration('onBatchEnd', batch, logs);
+    //       // }
+    //       await tf.nextFrame();
+    //     },
+    //     onEpochEnd: async (epoch, logs) => {
+    //       valAcc = logs.val_acc;
+    //       // ui.plotLoss(trainBatchCount, logs.val_loss, 'validation');
+    //       // ui.plotAccuracy(trainBatchCount, logs.val_acc, 'validation');
+    //       // if (onIteration) {
+    //       //   onIteration('onEpochEnd', epoch, logs);
+    //       // }
+    //       await tf.nextFrame();
+    //     }
+    //   }
+    // });
 
     
     batch.xs.dispose();
     batch.labels.dispose();
 
-    const test =  data.getTestData(100);
-    const evalOutput = this.model.evaluate(test.xs.reshape([100, 784]), test.labels);
+    const test =  data.getTestData(null);
+    const evalOutput = this.model.evaluate(test.xs.reshape([NUM_TEST_ELEMENTS, 784]), test.labels);
 
-    this.message = 
-      'Evaluation result:' +
-      'Loss = ' + evalOutput[0].dataSync()[0].toFixed(3) +
-      'Accuracy = ' + evalOutput[1].dataSync()[0].toFixed(3);
+    this.message = this.message + 
+       'Evaluation result:' +
+       'Loss = ' + evalOutput[0].dataSync()[0].toFixed(3) +
+       'Accuracy = ' + evalOutput[1].dataSync()[0].toFixed(3);
   }
 }
 
@@ -205,8 +216,8 @@ class miniData{
     
     this.trainLabelData = new Uint8Array(NUM_TRAIN_ELEMENTS * NUM_CLASSES);
     this.testLabelData = new Uint8Array(NUM_TEST_ELEMENTS * NUM_CLASSES);
-    this.trainLabelData = this.trainLabelData.fill(0,0,length);
-    this.testLabelData = this.testLabelData.fill(0,0,length);
+    this.trainLabelData = this.trainLabelData.fill(0,0,NUM_TRAIN_ELEMENTS);
+    this.testLabelData = this.testLabelData.fill(0,NUM_TEST_ELEMENTS);
 
     const trainImages = this.http.get(TRAIN_IMAGES_PATH, { responseType: 'arraybuffer' });
     await trainImages.toPromise().then( data => {
@@ -251,7 +262,7 @@ class miniData{
   getTrainData(numExamples) {
     let xs = tf.tensor4d(
         this.trainImageData,
-        [this.trainImageData.length / IMAGE_SIZE, IMAGE_H, IMAGE_W, 1]);
+        [NUM_TRAIN_ELEMENTS, IMAGE_H, IMAGE_W, 1]);
 
     let labels = tf.tensor2d(
         this.trainLabelData,
@@ -278,7 +289,7 @@ class miniData{
   getTestData(numExamples) {
     let xs = tf.tensor4d(
         this.testImageData,
-        [this.testImageData.length / IMAGE_SIZE, IMAGE_H, IMAGE_W, 1]);
+        [NUM_TEST_ELEMENTS, IMAGE_H, IMAGE_W, 1]);
     let labels = tf.tensor2d(
         this.testLabelData, [NUM_TEST_ELEMENTS, NUM_CLASSES]);
 
