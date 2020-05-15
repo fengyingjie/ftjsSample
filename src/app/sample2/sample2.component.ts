@@ -30,7 +30,7 @@ export class Sample2Component implements OnInit {
   private trainLabelData: Uint8Array;
   private trainImageData: Uint8Array;
 
-  message:string;
+  message: string;
 
   constructor(private http: HttpClient) { }
 
@@ -67,7 +67,7 @@ export class Sample2Component implements OnInit {
     // });
 
     // let t10kI = this.http.get('/assets/t10k-images.idx3-ubyte',{responseType: 'arraybuffer'});
-    
+
     // let index = 0;
 
     // t10kI.toPromise().then( data => {
@@ -87,7 +87,7 @@ export class Sample2Component implements OnInit {
     this.nn_model();
     this.initModel();
     this.train();
-  
+
   }
 
   // drawOneWord(context:CanvasRenderingContext2D,input:ArrayBuffer){
@@ -104,7 +104,7 @@ export class Sample2Component implements OnInit {
   // }
 
   nn_model() {
-    
+
     this.model = tf.sequential();
 
     this.model.add(tf.layers.dense({
@@ -118,12 +118,12 @@ export class Sample2Component implements OnInit {
       {units: 10, kernelInitializer: 'varianceScaling', activation: 'softmax'}));
   }
 
-  initModel(){
+  initModel() {
     const model = this.nn_model();
     const LEARNING_RATE = 0.15;
     const optimizer = tf.train.sgd(LEARNING_RATE);
     this.model.compile({
-      optimizer: optimizer,
+      optimizer,
       loss: 'categoricalCrossentropy',
       metrics: ['accuracy'],
     });
@@ -132,22 +132,22 @@ export class Sample2Component implements OnInit {
   async train() {
     const BATCH_SIZE = 16;
     const TRAIN_BATCHES = 10;
-  
-    //const TEST_BATCH_SIZE = 100;
-    //const TEST_ITERATION_FREQUENCY = 5;
-  
+
+    // const TEST_BATCH_SIZE = 100;
+    // const TEST_ITERATION_FREQUENCY = 5;
+
     const data = new miniData(this.http);
-    this.message = "load start";
+    this.message = 'load start';
     await data.load();
-    this.message = "load END";
-    const batch = data.getTrainData();
-    
-    this.message = "load END2";
+    this.message = 'load END';
+    const batch = data.getTrainData(null);
+
+    this.message = 'load END2';
     // The entire dataset doesn't fit into memory so we call fit repeatedly
     // with batches.
     const history = await this.model.fit(
         batch.xs.reshape([NUM_TRAIN_ELEMENTS, 784]), batch.labels,
-        {batchSize: 16, validationSplit:0.15, epochs: 5,
+        {batchSize: 16, validationSplit: 0.15, epochs: 5,
           callbacks: {
              onBatchEnd: async (batch1, logs) => {
               this.message = logs.acc + ',' + logs.loss;
@@ -156,7 +156,7 @@ export class Sample2Component implements OnInit {
         }
         );
 
-    this.message = "load END3";
+    this.message = 'load END3';
     // let valAcc;
     // await this.model.fit(batch.xs.reshape([NUM_TRAIN_ELEMENTS, 784]), batch.labels, {
     //   batchSize:32,
@@ -189,21 +189,20 @@ export class Sample2Component implements OnInit {
     //   }
     // });
 
-    
     batch.xs.dispose();
     batch.labels.dispose();
 
     const test =  data.getTestData(null);
     const evalOutput = this.model.evaluate(test.xs.reshape([NUM_TEST_ELEMENTS, 784]), test.labels);
 
-    this.message = this.message + 
+    this.message = this.message +
        'Evaluation result:' +
        'Loss = ' + evalOutput[0].dataSync()[0].toFixed(3) +
        'Accuracy = ' + evalOutput[1].dataSync()[0].toFixed(3);
   }
 }
 
-class miniData{
+class miniData {
 
   private trainImageData: Uint8Array;
   private trainLabelData: Uint8Array;
@@ -213,20 +212,20 @@ class miniData{
   constructor(private http: HttpClient) {}
 
   async load() {
-    
+
     this.trainLabelData = new Uint8Array(NUM_TRAIN_ELEMENTS * NUM_CLASSES);
     this.testLabelData = new Uint8Array(NUM_TEST_ELEMENTS * NUM_CLASSES);
-    this.trainLabelData = this.trainLabelData.fill(0,0,NUM_TRAIN_ELEMENTS);
-    this.testLabelData = this.testLabelData.fill(0,NUM_TEST_ELEMENTS);
+    this.trainLabelData = this.trainLabelData.fill(0, 0, NUM_TRAIN_ELEMENTS);
+    this.testLabelData = this.testLabelData.fill(0, NUM_TEST_ELEMENTS);
 
     const trainImages = this.http.get(TRAIN_IMAGES_PATH, { responseType: 'arraybuffer' });
     await trainImages.toPromise().then( data => {
        this.trainImageData = new Uint8Array(data);
-        this.trainImageData =
+       this.trainImageData =
         this.trainImageData.slice(16, IMAGE_SIZE * NUM_TRAIN_ELEMENTS + 16);
     });
 
-    const trainLabel = this.http.get(TRAIN_LABELS_PATH,{responseType: 'arraybuffer'});
+    const trainLabel = this.http.get(TRAIN_LABELS_PATH, {responseType: 'arraybuffer'});
     await trainLabel.toPromise().then( data => {
       const labelData = new Uint8Array(data).slice(8, NUM_TRAIN_ELEMENTS + 8);
       labelData.forEach( (value, index, array ) => {
@@ -242,11 +241,11 @@ class miniData{
         this.testImageData.slice(16, IMAGE_SIZE * NUM_TEST_ELEMENTS + 16);
     });
 
-    const testLabel = this.http.get(TEST_LABELS_PATH,{responseType: 'arraybuffer'});
+    const testLabel = this.http.get(TEST_LABELS_PATH, {responseType: 'arraybuffer'});
     await testLabel.toPromise().then( data => {
       const labelData = new Uint8Array(data).slice(8, NUM_TEST_ELEMENTS + 8);
       labelData.forEach( (value, index, array ) => {
-        this.testLabelData.set([1], index * NUM_CLASSES + value)
+        this.testLabelData.set([1], index * NUM_CLASSES + value);
       });
     });
   }

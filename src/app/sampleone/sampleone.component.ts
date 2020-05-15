@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import * as tf from '@tensorflow/tfjs';
-//import * as tfvis from '@tensorflow/tfjs-vis';
+import * as tfvis from '@tensorflow/tfjs-vis';
 
 @Component({
   selector: 'app-sampleone',
@@ -42,19 +42,48 @@ export class SampleoneComponent implements OnInit {
     const loss = history.history.loss;
     const accuracy = history.history.acc;
 
-    // const lossValues = [[], []];
-    // lossValues.push({x: accuracy, y: loss});
-    //const lossContainer = document.getElementById('loss-canvas');
+    // const lossValues: {x: number, y: number}[];
+    // lossValues.push({x: accuracy[0], y: loss});
+    const lossContainer = document.getElementById('loss-canvas');
 
-    
-    // const data: XYPlotData = [
-    //   { new Point2D( x: 0, y: history.history.loss[0] ) },
-    //   { x: 1, y: history.history.loss[1] },
-    //   { x: 2, y: history.history.loss[2] }
-    // ];
+    const data1 = {values : [
+      { x: 0, y: history.history.loss[0] },
+      { x: 1, y: history.history.loss[1] },
+      { x: 2, y: history.history.loss[2] }
+    ]
+   };
+
+  //const ;
+    //tfvis.show.modelSummary(tfvis.visor().surface({ name: 'Model Summary', tab: 'Model Inspection'}), model);
+
+    const accuracyValues = [[], []];
+    accuracyValues[0].push({x: loss, y: accuracy});
+    tfvis.render.linechart(
+    lossContainer,
+       data1, {
+         xLabel: 'Batch #',
+         yLabel: 'Accuracy',
+         width: 400,
+         height: 300,
+       });
+
+
+
+//     const data = [
+//       { index: 0, value: 50 },
+//       { index: 1, value: 100 },
+//       { index: 2, value: 150 },
+//     ];
+
+//     // Get a surface
+// const surface = tfvis.visor().surface({ name: 'Barchart', tab: 'Charts' });
+
+// // Render a barchart on that surface
+// tfvis.render.barchart(data, surface, {});
 
     // tfvis.render.linechart(
-    //   lossContainer, data,
+    //   lossContainer,
+    //   data1,
     //   {
     //     xLabel: 'Batch #',
     //     yLabel: 'Loss',
