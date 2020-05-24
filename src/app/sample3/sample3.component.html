@@ -1,6 +1,9 @@
 <p>sample3 works!</p>
 <h4>{{message}}</h4>
 <button (click)="loadModel()">load model</button>
+<button (click)="changeImg()">changeImage</button>
+<input type='text' id='inputimg' />
 <button (click)="detect()">detect</button>
-<img id='inputimg' src='assets/inputimg2.jpg' />
-<canvas id='myCanvas'></canvas>
+<img id='inputimg' (load)="imgLoad()" />
+<div id='myCanvas'></div>
+<video id="video" width="640" height="480" (timeupdate)='videoTimeupdate()' src='/assets/DJI0047.MOV' controls autoplay></video>

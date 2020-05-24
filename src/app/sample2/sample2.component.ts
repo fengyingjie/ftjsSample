@@ -41,49 +41,8 @@ export class Sample2Component implements OnInit {
     const showNmCanvas = document.createElement('canvas');
     const showNmContext = showNmCanvas.getContext( '2d' );
 
-    this.message = 'Loading train images data.';
+    this.message = 'Loading train images data.'
 
-    // const trainImages = this.http.get(TRAIN_IMAGES_PATH,{responseType: 'arraybuffer'});
-    // trainImages.toPromise().then( data => {
-    //   this.trainImageData = new Uint8Array(data);
-    //   this.message = 'Train images data loaded';
-    // });
-
-    // const trainLabel = this.http.get(TRAIN_LABELS_PATH,{responseType: 'arraybuffer'});
-    // trainLabel.toPromise().then( data => {
-    //   this.trainLabelData = new Uint8Array(data);
-    //   this.message = 'Train label data loaded';
-    // });
-
-    // const t10kL = this.http.get('/assets/t10k-labels.idx1-ubyte',{responseType: 'arraybuffer'});
-    // t10kL.toPromise().then( data => {
-
-    //   this.message = 'Loading complate 1';
-
-    //   const t10kLabel = new Uint8Array(data);
-    //   t10kLabel.forEach((value: number, index: number, array: Uint8Array)=>{
-    //     this.message= this.message + " " + value;
-    //   });
-    // });
-
-    // let t10kI = this.http.get('/assets/t10k-images.idx3-ubyte',{responseType: 'arraybuffer'});
-    
-    // let index = 0;
-
-    // t10kI.toPromise().then( data => {
-
-    //   this.message="Loading complate 2";
-
-    //   showNmCanvas.height = data.byteLength/280;
-    //    this.drawOneWord(showNmContext,data);
-
-    //    showNmDiv.appendChild(showNmCanvas);
-    // });
-
-    // const trainData = new miniData(this.http);
-    // await trainData.load();
-    // trainData.getTrainData();
-    // trainData.getTestData(1);
     this.nn_model();
     this.initModel();
     this.train();
@@ -134,6 +93,7 @@ export class Sample2Component implements OnInit {
     //const TEST_BATCH_SIZE = 100;
     //const TEST_ITERATION_FREQUENCY = 5;
   
+    
     const data = new miniData(this.http);
     this.message = "load start";
     await data.load();
@@ -147,13 +107,17 @@ export class Sample2Component implements OnInit {
     //     {batchSize: 16, validationSplit:0.15, epochs: 5});
 
     let valAcc;
-    await this.model.fit(batch.xs.reshape([10000, 784]), batch.labels, {
+    const history = await this.model.fit(batch.xs.reshape([10000, 784]), batch.labels, {
       batchSize:32,
       validationSplit:0.15,
       epochs: 1,
       callbacks: {
-        onBatchEnd: async (batch, logs) => {
-          this.message = logs.acc + "," + logs.loss;
+        onBatchBegin: async (batch2, logs) => {
+          batch2.toString();
+        },
+        onBatchEnd: async (batch2, logs) => {
+          
+          this.message = batch2.toString() + ' : ' + logs.acc + "," + logs.loss;
           // trainBatchCount++;
           // ui.logStatus(
           //     `Training... (` +
@@ -164,16 +128,16 @@ export class Sample2Component implements OnInit {
           // if (onIteration && batch % 10 === 0) {
           //   onIteration('onBatchEnd', batch, logs);
           // }
-          await tf.nextFrame();
+          //await tf.nextFrame();
         },
-        onEpochEnd: async (epoch, logs) => {
-          valAcc = logs.val_acc;
+        onEpochEnd: async (epoch1, logs) => {
+          //valAcc = logs.val_acc;
           // ui.plotLoss(trainBatchCount, logs.val_loss, 'validation');
           // ui.plotAccuracy(trainBatchCount, logs.val_acc, 'validation');
           // if (onIteration) {
           //   onIteration('onEpochEnd', epoch, logs);
           // }
-          await tf.nextFrame();
+          //await tf.nextFrame();
         }
       }
     });
