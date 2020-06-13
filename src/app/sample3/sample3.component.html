@@ -1,0 +1,9 @@
+<p>sample3 works!</p>
+<h4>{{message}}</h4>
+<button (click)="loadModel()">load model</button>
+<button (click)="getUserMedia()">Use Camares</button>
+<input type='text' id='inputimg' />
+<button (click)="detect()">detect</button>
+<img id='inputimg' (load)="imgLoad()" />
+<div id='myCanvas'></div>
+<video id="video" width="640" height="480" (timeupdate)='videoTimeupdate()' src='/assets/sportsmeeting.mp4' controls autoplay loop></video>

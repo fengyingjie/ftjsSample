@@ -41,7 +41,7 @@ export class Sample2Component implements OnInit {
     const showNmCanvas = document.createElement('canvas');
     const showNmContext = showNmCanvas.getContext( '2d' );
 
-    this.message = 'Loading train images data.';
+    this.message = 'Loading train images data.'
 
     // const trainImages = this.http.get(TRAIN_IMAGES_PATH,{responseType: 'arraybuffer'});
     // trainImages.toPromise().then( data => {
