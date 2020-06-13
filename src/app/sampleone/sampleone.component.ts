@@ -30,6 +30,8 @@ export class SampleoneComponent implements OnInit {
     const xs = tf.tensor2d([-1, 0, 1, 2, 3, 4, 5, 6, 7, 8], [10, 1]);
     const ys = tf.tensor2d([-3, -1, 1, 3, 5, 7, 9, 11, 13, 15], [10, 1]);
 
+    this.lossValues = new Array<tfvis.Point2D>();
+
     const history = await model.fit(xs, ys, {
       epochs: 100,
       callbacks: {
@@ -48,7 +50,7 @@ export class SampleoneComponent implements OnInit {
 }
   plotLoss(epoch, loss) {
 
-    this.lossValues.push({x: epoch, y: loss});
+    this.lossValues.push({x: epoch, y: loss} as tfvis.Point2D);
 
     const lossContainer = document.getElementById('loss-canvas');
 
